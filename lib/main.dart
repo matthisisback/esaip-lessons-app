@@ -37,41 +37,60 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  Color getBackgroundColor() {
+    if (temperature == null) {
+      return Colors.grey;
+    } else if (temperature! < 5) {
+      return Colors.blueAccent; // Temps froid
+    } else if (temperature! < 20) {
+      return Colors.lightBlue; // Temps doux
+    } else if (temperature! < 30) {
+      return Colors.orangeAccent; // Temps chaud
+    } else {
+      return Colors.redAccent; // Temps très chaud
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(title: Text("Température Actuelle")),
-        body: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextField(
-                controller: locationController,
-                decoration: InputDecoration(
-                  labelText: "Entrez un lieu",
-                  border: OutlineInputBorder(),
+        body: Container(
+          decoration: BoxDecoration(
+            color: getBackgroundColor(),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextField(
+                  controller: locationController,
+                  decoration: InputDecoration(
+                    labelText: "Entrez un lieu",
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () {
-                  if (locationController.text.isNotEmpty) {
-                    fetchTemperature(locationController.text);
-                  }
-                },
-                child: Text("Obtenir la température"),
-              ),
-              SizedBox(height: 20),
-              temperature != null
-                  ? Text(
-                      "Température à $location : ${temperature!.toStringAsFixed(1)} °C",
-                      style: TextStyle(fontSize: 20),
-                    )
-                  : Text("Aucune donnée disponible",
-                      style: TextStyle(fontSize: 20)),
-            ],
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    if (locationController.text.isNotEmpty) {
+                      fetchTemperature(locationController.text);
+                    }
+                  },
+                  child: Text("Obtenir la température"),
+                ),
+                SizedBox(height: 20),
+                temperature != null
+                    ? Text(
+                        "Température à $location : ${temperature!.toStringAsFixed(1)} °C",
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      )
+                    : Text("Aucune donnée disponible",
+                        style: TextStyle(fontSize: 20)),
+              ],
+            ),
           ),
         ),
       ),
