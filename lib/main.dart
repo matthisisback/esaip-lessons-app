@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Capteur de Température - Interface Technicien'),
+      home: const MyHomePage(title: 'Capteur Température'),
     );
   }
 }
@@ -33,6 +33,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   double _temperature = 20.0; // Température initiale
+  bool _isActiveMode = true; // Mode actif ou veille
   late Timer _timer;
 
   @override
@@ -42,18 +43,21 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _startTemperatureSimulation() {
-    _timer = Timer.periodic(const Duration(seconds: 20), (timer) {
-      setState(() {
-        _temperature = Random().nextDouble() * 40; // Simulation entre 0 et 40°C
-      });
-      _sendTemperatureToServer();
-    });
+    _timer = Timer.periodic(
+      Duration(seconds: _isActiveMode ? 10 : 20),
+      (timer) {
+        setState(() {
+          _temperature = Random().nextDouble() * 40; // Simulation entre 0 et 40°C
+        });
+        _sendTemperatureToServer();
+      },
+    );
   }
 
   Future<void> _sendTemperatureToServer() async {
     final response = await http.post(
       Uri.parse('https://example.com/api/temperature'), // Remplace par ton URL serveur
-      body: {'temperature': _temperature.toString()},
+      body: {'temperature': _temperature.toStringAsFixed(1)}, // Respect de la précision 0.1°C
     );
 
     if (response.statusCode == 200) {
@@ -61,6 +65,20 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       print('Erreur lors de l\'envoi');
     }
+  }
+
+  void _toggleMode() {
+    setState(() {
+      _isActiveMode = !_isActiveMode;
+      _timer.cancel();
+      _startTemperatureSimulation();
+    });
+  }
+
+  void _updateTemperature(double value) {
+    setState(() {
+      _temperature = value;
+    });
   }
 
   @override
@@ -80,19 +98,42 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'Température actuelle:',
-              style: TextStyle(fontSize: 18),
-            ),
+            const Text('Température actuelle:', style: TextStyle(fontSize: 18)),
             Text(
-              '$_temperature °C',
+              '${_temperature.toStringAsFixed(1)} °C', // Affichage avec précision 0.1°C
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 20),
+            
+            // Slider pour modifier la température
+            Slider(
+              value: _temperature,
+              min: 0,
+              max: 40,
+              divisions: 400, // Précision de 0.1°C
+              label: '${_temperature.toStringAsFixed(1)} °C',
+              onChanged: _updateTemperature,
+            ),
+            
+            const SizedBox(height: 20),
+
+            // Bouton pour changer entre mode actif et veille
+            ElevatedButton(
+              onPressed: _toggleMode,
+              child: Text(_isActiveMode ? 'Passer en mode veille' : 'Passer en mode actif'),
+            ),
+            
+            const SizedBox(height: 10),
+
+            // Bouton pour envoyer la température manuellement
             ElevatedButton(
               onPressed: _sendTemperatureToServer,
               child: const Text('Envoyer Température'),
             ),
+
+            const SizedBox(height: 20),
+            const Text('Unité: °C'),
+            Text(_isActiveMode ? 'Mode actif (10 sec)' : 'Mode veille (20 sec)', style: const TextStyle(fontSize: 16)),
           ],
         ),
       ),
